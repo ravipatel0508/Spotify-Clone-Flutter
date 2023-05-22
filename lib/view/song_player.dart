@@ -97,6 +97,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final h = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor:
           dycolors!.isEmpty ? Colors.white : dycolors![_current].color,
@@ -122,7 +123,6 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
         centerTitle: true,
       ),
       body: Container(
-        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -135,26 +135,30 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
         ),
         child: Column(
           children: [
-            const Spacer(),
+            const Spacer(
+              flex: 1,
+            ),
             CarouselSlider(
               items: images
-                  .map((item) => Container(
-                        margin: const EdgeInsets.all(5.0),
+                  .map((item) => SizedBox(
+                        height: h * .40,
+                        width: h * .40,
                         child: ClipRRect(
                           borderRadius:
                               const BorderRadius.all(Radius.circular(5.0)),
-                          child: Image.asset(item,
-                              fit: BoxFit.cover, width: 1000.0),
+                          child: Image.asset(item, fit: BoxFit.contain),
                         ),
                       ))
                   .toList(),
               carouselController: _controller,
               options: CarouselOptions(
+                padEnds: false,
                 // autoPlay: true,
                 enableInfiniteScroll: true,
-                enlargeCenterPage: true,
+                enlargeCenterPage: false,
                 // need square image
-                aspectRatio: 1,
+                aspectRatio: 4 / 3,
+                viewportFraction: 1,
                 onPageChanged: (index, reason) {
                   setState(() {
                     _current = index;
@@ -169,113 +173,121 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
             //   borderRadius: BorderRadius.circular(10),
             //   child: Image.asset('assets/audio/audio_poster/calmdown.jpg'),
             // ),
-            const SizedBox(height: 20),
-            const Spacer(),
-            Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            Expanded(
+              flex: 5,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
                   children: [
-                    Text(
-                      imagesNames[_current],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              imagesNames[_current],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              imagesArtistNames[_current],
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        const Icon(
+                          Icons.favorite,
+                          size: 30,
+                          color: Colors.green,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      imagesArtistNames[_current],
-                      style: const TextStyle(color: Colors.grey),
+                    Slider(
+                      min: 0,
+                      max: duration.inSeconds.toDouble(),
+                      value: position.inSeconds.toDouble(),
+                      thumbColor: Colors.white,
+                      activeColor: Colors.green,
+                      onChanged: (value) async {
+                        final position = Duration(seconds: value.toInt());
+                        await audioPlayer.seek(position);
+                      },
                     ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          formatTime(position),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          formatTime(duration - position),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        const Icon(
+                          Icons.shuffle,
+                          size: 30,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 20),
+                        const Icon(
+                          Icons.skip_previous,
+                          size: 30,
+                          color: Colors.white,
+                        ),
+                        CircleAvatar(
+                          radius: 35,
+                          backgroundColor: Colors.white,
+                          child: IconButton(
+                            icon: Icon(
+                              isPlaying ? Icons.pause : Icons.play_arrow,
+                              color: Colors.black,
+                            ),
+                            iconSize: 40,
+                            onPressed: () async {
+                              if (isPlaying) {
+                                await audioPlayer.pause();
+                              } else {
+                                await audioPlayer.resume();
+                              }
+                            },
+                          ),
+                        ),
+                        const Icon(
+                          Icons.skip_next,
+                          size: 30,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 20),
+                        const Icon(
+                          Icons.repeat,
+                          size: 30,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
                   ],
                 ),
-                const Spacer(),
-                const Icon(
-                  Icons.favorite,
-                  size: 30,
-                  color: Colors.green,
-                ),
-              ],
+              ),
             ),
-            Slider(
-              min: 0,
-              max: duration.inSeconds.toDouble(),
-              value: position.inSeconds.toDouble(),
-              thumbColor: Colors.white,
-              activeColor: Colors.green,
-              onChanged: (value) async {
-                final position = Duration(seconds: value.toInt());
-                await audioPlayer.seek(position);
-              },
-            ),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  formatTime(position),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
-                Text(
-                  formatTime(duration - position),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                const Icon(
-                  Icons.shuffle,
-                  size: 30,
-                  color: Colors.white,
-                ),
-                const SizedBox(width: 20),
-                const Icon(
-                  Icons.skip_previous,
-                  size: 30,
-                  color: Colors.white,
-                ),
-                CircleAvatar(
-                  radius: 35,
-                  backgroundColor: Colors.white,
-                  child: IconButton(
-                    icon: Icon(
-                      isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: Colors.black,
-                    ),
-                    iconSize: 40,
-                    onPressed: () async {
-                      if (isPlaying) {
-                        await audioPlayer.pause();
-                      } else {
-                        await audioPlayer.resume();
-                      }
-                    },
-                  ),
-                ),
-                const Icon(
-                  Icons.skip_next,
-                  size: 30,
-                  color: Colors.white,
-                ),
-                const SizedBox(width: 20),
-                const Icon(
-                  Icons.repeat,
-                  size: 30,
-                  color: Colors.white,
-                ),
-              ],
-            ),
-            const Spacer(),
           ],
         ),
       ),
